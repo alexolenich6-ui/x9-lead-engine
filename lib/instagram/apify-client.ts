@@ -94,11 +94,14 @@ export async function fetchInstagramPostsRaw(
   username: string,
   approxLimit = 15,
 ): Promise<Record<string, unknown>[]> {
+  // Accounts mix Reels in with image/carousel posts (often <50% are video),
+  // so the actor needs a much wider window than approxLimit to reliably
+  // surface `approxLimit` actual Reels.
   return runActorSync(
     {
       directUrls: [buildProfileUrl(username)],
       resultsType: "posts",
-      resultsLimit: Math.max(approxLimit * 2, 30),
+      resultsLimit: Math.max(approxLimit * 4, 60),
     },
     "reels",
     120_000,
