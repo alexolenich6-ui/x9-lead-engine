@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { ApifyRequestError, fetchInstagramPostsRaw, fetchInstagramProfileRaw } from "@/lib/instagram/apify-client";
+import { ApifyRequestError, fetchInstagramPostsRaw, fetchInstagramProfileRaw, isMockMode } from "@/lib/instagram/apify-client";
+import { readInstagramCache, writeInstagramCache } from "@/lib/instagram/cache";
 import type { LeadRecord } from "@/lib/lead-record";
 import { normalizeLead } from "@/lib/normalize/normalize-lead";
 import { analyzeLead, SalesBrainError } from "@/lib/sales-brain/analyze";
@@ -31,36 +32,59 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const forceRefresh = (body as { forceRefresh?: unknown })?.forceRefresh === true;
 
   let rawProfile: Record<string, unknown> | null;
-  try {
-    rawProfile = await fetchInstagramProfileRaw(username);
-  } catch (err) {
-    if (err instanceof ApifyRequestError) {
-      return NextResponse.json({ error: err.message, stage: "profile" }, { status: 502 });
-    }
-    return NextResponse.json({ error: "Ошибка при получении профиля.", stage: "profile" }, { status: 502 });
-  }
-
   let rawPosts: Record<string, unknown>[];
-  try {
-    rawPosts = await fetchInstagramPostsRaw(username, 15);
-  } catch (err) {
-    if (err instanceof ApifyRequestError) {
-      return NextResponse.json({ error: err.message, stage: "reels" }, { status: 502 });
-    }
-    return NextResponse.json({ error: "Ошибка при получении Reels.", stage: "reels" }, { status: 502 });
-  }
+  let instagramFetchedAt: string;
+  let instagramSource: "cache" | "live" | "mock";
 
-  if (!rawProfile && rawPosts.length === 0) {
-    return NextResponse.json(
-      {
-        error:
-          "Не удалось получить данные по этому профилю. Проверьте username или доступность аккаунта.",
-        stage: "profile",
-      },
-      { status: 404 },
-    );
+  // Mock mode never reads or writes the real Instagram cache — fixture data
+  // stays clearly labeled "mock" and never contaminates the live cache.
+  const cached = forceRefresh || isMockMode() ? null : await readInstagramCache(username);
+
+  if (cached) {
+    rawProfile = cached.profile;
+    rawPosts = cached.posts;
+    instagramFetchedAt = cached.fetchedAt;
+    instagramSource = "cache";
+  } else {
+    try {
+      rawProfile = await fetchInstagramProfileRaw(username);
+    } catch (err) {
+      if (err instanceof ApifyRequestError) {
+        return NextResponse.json({ error: err.message, stage: "profile" }, { status: 502 });
+      }
+      return NextResponse.json({ error: "Ошибка при получении профиля.", stage: "profile" }, { status: 502 });
+    }
+
+    try {
+      rawPosts = await fetchInstagramPostsRaw(username, 15);
+    } catch (err) {
+      if (err instanceof ApifyRequestError) {
+        return NextResponse.json({ error: err.message, stage: "reels" }, { status: 502 });
+      }
+      return NextResponse.json({ error: "Ошибка при получении Reels.", stage: "reels" }, { status: 502 });
+    }
+
+    if (!rawProfile && rawPosts.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Не удалось получить данные по этому профилю. Проверьте username или доступность аккаунта.",
+          stage: "profile",
+        },
+        { status: 404 },
+      );
+    }
+
+    instagramFetchedAt = new Date().toISOString();
+    if (isMockMode()) {
+      instagramSource = "mock";
+    } else {
+      instagramSource = "live";
+      await writeInstagramCache(username, { fetchedAt: instagramFetchedAt, profile: rawProfile, posts: rawPosts });
+    }
   }
 
   const normalized = normalizeLead(username, rawProfile, rawPosts, 15);
@@ -72,6 +96,8 @@ export async function POST(request: Request) {
       id: randomUUID(),
       username: normalized.profile.username,
       analyzedAt: new Date().toISOString(),
+      instagramFetchedAt,
+      instagramSource,
       profile: normalized.profile,
       reels: normalized.reels,
       contentStats: normalized.contentStats,

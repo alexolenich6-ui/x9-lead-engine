@@ -5,6 +5,10 @@ export interface LeadRecord {
   id: string;
   username: string;
   analyzedAt: string;
+  // When the underlying Apify data was fetched, and whether this analysis
+  // reused a cached copy or triggered a live Apify call.
+  instagramFetchedAt: string;
+  instagramSource: "cache" | "live" | "mock";
   profile: NormalizedProfile;
   reels: NormalizedReel[];
   contentStats: ContentStats;

@@ -21,7 +21,7 @@ export default function Home() {
 
   const selected = records.find((r) => r.id === selectedId) ?? null;
 
-  async function handleAnalyze(username: string) {
+  async function handleAnalyze(username: string, forceRefresh = false) {
     setError(null);
     setLoading(true);
     setStageIndex(0);
@@ -37,7 +37,7 @@ export default function Home() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, forceRefresh }),
       });
       const data = await res.json();
 
@@ -74,7 +74,10 @@ export default function Home() {
 
       <main className="flex-1 overflow-y-auto">
         {selected && !loading ? (
-          <LeadReport record={selected} />
+          <LeadReport
+            record={selected}
+            onRefreshInstagramData={() => handleAnalyze(selected.username, true)}
+          />
         ) : (
           <AnalyzeForm
             loading={loading}

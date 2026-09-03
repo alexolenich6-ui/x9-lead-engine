@@ -23,8 +23,9 @@ npm run dev
 
 | Переменная | Обязательна | Описание |
 |---|---|---|
-| `APIFY_TOKEN` | да | Токен Apify API |
-| `APIFY_ACTOR_ID` | да | ID Apify-актора Instagram Scraper |
+| `APIFY_TOKEN` | да (если не mock-режим) | Токен Apify API |
+| `APIFY_ACTOR_ID` | да (если не mock-режим) | ID Apify-актора Instagram Scraper |
+| `INSTAGRAM_MODE` | нет | `mock` — не ходить в Apify вообще, отдавать фикстуру. Пусто/не задано — обычный режим (Apify + кэш) |
 | `AI_PROVIDER` | нет | `anthropic` (по умолчанию) или `openrouter` |
 | `X9_ANTHROPIC_API_KEY` | если `AI_PROVIDER=anthropic` | Ключ Anthropic API |
 | `ANTHROPIC_MODEL` | нет | По умолчанию `claude-sonnet-5` |
@@ -34,6 +35,25 @@ npm run dev
 Оба провайдера используют одну и ту же схему и промпт XNINE Sales Brain
 (`lib/sales-brain/schema.ts`, `lib/sales-brain/prompt.ts`) — формат результата
 не зависит от выбранного провайдера.
+
+## Кэш Instagram-данных и mock-режим
+
+Apify-запросы (профиль + Reels) — самая дорогая и лимитированная часть
+пайплайна, поэтому они не выполняются лишний раз:
+
+- **Кэш по username.** После первого успешного сбора данных по лиду сырые
+  данные Apify сохраняются в `.cache/instagram/<username>.json` (в
+  `.gitignore`, не коммитится). Повторный анализ того же username переиспользует
+  эти данные и не обращается к Apify — обновляется только AI-разбор.
+- **Открытие/обновление отчёта из истории** — чисто клиентская операция
+  (`localStorage`), никогда не обращается ни к Apify, ни к серверу.
+- **"Refresh Instagram Data"** — кнопка в отчёте лида, которая явно форсирует
+  свежий сбор данных через Apify и перезаписывает кэш для этого username.
+  Без неё Apify для уже проанализированного лида больше не вызывается.
+- **`INSTAGRAM_MODE=mock`** — режим для UI-разработки и тестов: все вызовы
+  Apify подменяются фикстурой из `lib/instagram/fixtures/enotbuilding.json`
+  (реальные данные, собранные один раз через Apify), сеть не используется
+  вообще. В отчёте такие данные помечены бейджем "Mock data".
 
 ## Структура
 

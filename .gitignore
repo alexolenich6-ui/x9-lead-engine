@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# cached raw Instagram data (per-username, see lib/instagram/cache.ts)
+/.cache/
+
 # production
 /build
 

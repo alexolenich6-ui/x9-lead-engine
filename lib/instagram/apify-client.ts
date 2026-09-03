@@ -1,4 +1,13 @@
+import mockFixture from "./fixtures/enotbuilding.json";
+
 const APIFY_API_BASE = "https://api.apify.com/v2";
+
+// Dev/test escape hatch: with INSTAGRAM_MODE=mock, every call is served from
+// a fixture captured from a real Apify run — no network call, no username
+// distinction. Lets UI work happen without ever touching the Apify quota.
+export function isMockMode(): boolean {
+  return process.env.INSTAGRAM_MODE === "mock";
+}
 
 export class ApifyRequestError extends Error {
   constructor(
@@ -78,6 +87,9 @@ async function runActorSync(
 export async function fetchInstagramProfileRaw(
   username: string,
 ): Promise<Record<string, unknown> | null> {
+  if (isMockMode()) {
+    return mockFixture.profile;
+  }
   const items = await runActorSync(
     {
       directUrls: [buildProfileUrl(username)],
@@ -94,6 +106,9 @@ export async function fetchInstagramPostsRaw(
   username: string,
   approxLimit = 15,
 ): Promise<Record<string, unknown>[]> {
+  if (isMockMode()) {
+    return mockFixture.posts;
+  }
   // Accounts mix Reels in with image/carousel posts (often <50% are video),
   // so the actor needs a much wider window than approxLimit to reliably
   // surface `approxLimit` actual Reels.

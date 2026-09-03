@@ -6,6 +6,7 @@ import {
   BulletList,
   ContactMethodBadge,
   CopyButton,
+  InstagramSourceBadge,
   NextActionBadge,
   OfferBadge,
   Section,
@@ -13,7 +14,13 @@ import {
   formatNumber,
 } from "./ui";
 
-export function LeadReport({ record }: { record: LeadRecord }) {
+export function LeadReport({
+  record,
+  onRefreshInstagramData,
+}: {
+  record: LeadRecord;
+  onRefreshInstagramData?: () => void;
+}) {
   const { profile, contentStats, analysis } = record;
 
   return (
@@ -51,6 +58,24 @@ export function LeadReport({ record }: { record: LeadRecord }) {
               <VerdictBadge verdict={analysis.icp.verdict} />
             </div>
           </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-2">
+            <InstagramSourceBadge source={record.instagramSource} />
+            <span>
+              Instagram-данные от {new Date(record.instagramFetchedAt).toLocaleString("ru-RU")}
+            </span>
+          </div>
+          {onRefreshInstagramData && (
+            <button
+              type="button"
+              onClick={onRefreshInstagramData}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-accent hover:text-accent"
+            >
+              Refresh Instagram Data
+            </button>
+          )}
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-5">

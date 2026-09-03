@@ -8,6 +8,7 @@ import type {
   NextAction,
   RecommendedOfferType,
 } from "@/lib/sales-brain/types";
+import type { LeadRecord } from "@/lib/lead-record";
 
 export function Section({
   title,
@@ -81,6 +82,26 @@ const VERDICT_LABELS: Record<IcpVerdict, string> = {
   LOW: "Low",
   NOT_ICP: "Not ICP",
 };
+
+const INSTAGRAM_SOURCE_STYLES: Record<LeadRecord["instagramSource"], string> = {
+  cache: "bg-[#e5e5ea] text-muted",
+  live: "bg-success/15 text-success",
+  mock: "bg-danger-soft text-danger",
+};
+
+const INSTAGRAM_SOURCE_LABELS: Record<LeadRecord["instagramSource"], string> = {
+  cache: "Cached",
+  live: "Live",
+  mock: "Mock data",
+};
+
+export function InstagramSourceBadge({ source }: { source: LeadRecord["instagramSource"] }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${INSTAGRAM_SOURCE_STYLES[source]}`}>
+      {INSTAGRAM_SOURCE_LABELS[source]}
+    </span>
+  );
+}
 
 export function VerdictBadge({ verdict }: { verdict: IcpVerdict }) {
   return (
