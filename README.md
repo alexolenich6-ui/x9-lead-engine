@@ -2,15 +2,15 @@
 
 Внутренний AI-инструмент XNINE для аутрича: вставляете Instagram username →
 приложение получает публичные данные профиля и последние Reels через Apify →
-Anthropic анализирует лид по методологии XNINE → на выходе готовый sales
-brief (ICP score, рекомендуемый оффер, sales angle, первое сообщение, next
-best action).
+AI (Anthropic или OpenRouter) анализирует лид по методологии XNINE → на
+выходе готовый sales brief (ICP score, рекомендуемый оффер, sales angle,
+первое сообщение, next best action).
 
 ## Запуск локально
 
 ```bash
 npm install
-cp .env.local.example .env.local   # заполнить APIFY_TOKEN / APIFY_ACTOR_ID / ANTHROPIC_API_KEY
+cp .env.local.example .env.local   # заполнить APIFY_TOKEN / APIFY_ACTOR_ID / ключ AI-провайдера
 npm run dev
 ```
 
@@ -25,8 +25,15 @@ npm run dev
 |---|---|---|
 | `APIFY_TOKEN` | да | Токен Apify API |
 | `APIFY_ACTOR_ID` | да | ID Apify-актора Instagram Scraper |
-| `ANTHROPIC_API_KEY` | да | Ключ Anthropic API |
+| `AI_PROVIDER` | нет | `anthropic` (по умолчанию) или `openrouter` |
+| `X9_ANTHROPIC_API_KEY` | если `AI_PROVIDER=anthropic` | Ключ Anthropic API |
 | `ANTHROPIC_MODEL` | нет | По умолчанию `claude-sonnet-5` |
+| `X9_OPENROUTER_API_KEY` | если `AI_PROVIDER=openrouter` | Ключ OpenRouter API |
+| `OPENROUTER_MODEL` | нет | По умолчанию `minimax/minimax-m3:free` |
+
+Оба провайдера используют одну и ту же схему и промпт XNINE Sales Brain
+(`lib/sales-brain/schema.ts`, `lib/sales-brain/prompt.ts`) — формат результата
+не зависит от выбранного провайдера.
 
 ## Структура
 

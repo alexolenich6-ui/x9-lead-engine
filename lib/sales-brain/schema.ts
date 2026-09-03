@@ -1,8 +1,10 @@
 import type Anthropic from "@anthropic-ai/sdk";
 
-// JSON schema for the forced tool call that Anthropic must use to return the
-// lead analysis. `strict: true` + `additionalProperties: false` + full
-// `required` arrays guarantee the response matches LeadAnalysis exactly.
+// JSON schema for the structured lead analysis output, shared by every AI
+// provider (Anthropic forced tool call, OpenRouter structured outputs, ...)
+// so the result shape never drifts between them. `strict: true` +
+// `additionalProperties: false` + full `required` arrays guarantee the
+// response matches LeadAnalysis exactly.
 
 const icpScoreItem = {
   type: "object",
@@ -16,14 +18,9 @@ const icpScoreItem = {
   additionalProperties: false,
 };
 
-export const LEAD_ANALYSIS_TOOL: Anthropic.Tool = {
-  name: "submit_lead_analysis",
-  description:
-    "Отправить структурированный sales-анализ Instagram-лида по методологии XNINE.",
-  strict: true,
-  input_schema: {
-    type: "object",
-    properties: {
+export const LEAD_ANALYSIS_JSON_SCHEMA = {
+  type: "object",
+  properties: {
       leadSummary: {
         type: "string",
         description:
@@ -174,21 +171,28 @@ export const LEAD_ANALYSIS_TOOL: Anthropic.Tool = {
         additionalProperties: false,
       },
     },
-    required: [
-      "leadSummary",
-      "icp",
-      "recommendedOffer",
-      "existingStrengths",
-      "marketingGaps",
-      "contentAnalysis",
-      "primarySalesAngle",
-      "whatNotToSay",
-      "bestContactMethod",
-      "firstOutreach",
-      "auditRouting",
-      "diagnosticQuestions",
-      "nextBestAction",
-    ],
-    additionalProperties: false,
-  },
+  required: [
+    "leadSummary",
+    "icp",
+    "recommendedOffer",
+    "existingStrengths",
+    "marketingGaps",
+    "contentAnalysis",
+    "primarySalesAngle",
+    "whatNotToSay",
+    "bestContactMethod",
+    "firstOutreach",
+    "auditRouting",
+    "diagnosticQuestions",
+    "nextBestAction",
+  ],
+  additionalProperties: false,
+};
+
+export const LEAD_ANALYSIS_TOOL: Anthropic.Tool = {
+  name: "submit_lead_analysis",
+  description:
+    "Отправить структурированный sales-анализ Instagram-лида по методологии XNINE.",
+  strict: true,
+  input_schema: LEAD_ANALYSIS_JSON_SCHEMA as Anthropic.Tool["input_schema"],
 };
